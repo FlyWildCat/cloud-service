@@ -1,5 +1,7 @@
 package ru.pda.cloudservice.configurations;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class AuthTokenFilter extends OncePerRequestFilter {
+    Logger logger = LoggerFactory.getLogger(AuthTokenFilter.class);
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -24,7 +27,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        System.out.println("request context - " + request.getServletPath());
+//        System.out.println("request context - " + request.getServletPath());
         try {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
@@ -35,12 +38,13 @@ public class AuthTokenFilter extends OncePerRequestFilter {
                                 userDetails, null, userDetails.getAuthorities()
                         );
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                System.out.println(authenticationToken.isAuthenticated());
+//                System.out.println(authenticationToken.isAuthenticated());
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
-                System.out.println(SecurityContextHolder.getContext().getAuthentication().getDetails());
+//                System.out.println(SecurityContextHolder.getContext().getAuthentication().getDetails());
             }
         } catch (Exception e) {
-            System.out.println("error - " + e.getMessage());
+            logger.error("error - " + e.getMessage());
+//            System.out.println("error - " + e.getMessage());
         }
 
         filterChain.doFilter(request, response);
@@ -48,11 +52,11 @@ public class AuthTokenFilter extends OncePerRequestFilter {
 
     private String parseJwt(HttpServletRequest request) {
         String authToken = request.getHeader("auth-token");
-        System.out.println("token - " + authToken);
+//        System.out.println("token - " + authToken);
         if (StringUtils.hasText(authToken) && authToken.startsWith("Bearer ")) {
             return authToken.substring(7);
         }
-// && authToken.startsWith("Bearer ")   .substring(7)
+
         return null;
     }
 }

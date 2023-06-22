@@ -1,5 +1,7 @@
 package ru.pda.cloudservice.controllers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,7 @@ import ru.pda.cloudservice.repositorys.UserRepository;
 
 @RestController
 public class LoginController {
+    Logger logger = LoggerFactory.getLogger(LoginController.class);
     @Autowired
     AuthenticationManager authenticationManager;
     @Autowired
@@ -25,7 +28,8 @@ public class LoginController {
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
     public AuthToken authenticateUser(@RequestBody AuthInRequest authInRequest) {
-        System.out.println("authInRequest - " + authInRequest.getLogin());
+//        System.out.println("authInRequest - " + authInRequest.getLogin());
+        logger.info("Вход пользователя - " + authInRequest.getLogin());
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken
                         (authInRequest.getLogin(),
@@ -34,19 +38,22 @@ public class LoginController {
         SecurityContextHolder.getContext()
                 .setAuthentication(authentication);
         String jwt = jwtUtils.generateToken(authentication);
-
+        logger.info("Токен сформирован и отправлен.");
         return new AuthToken(jwt);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> doLogout(@RequestHeader("auth-token") String token) {
-        System.out.println("logout token - " + token);
+//        System.out.println("logout token - " + token);
+        logger.info("Запрос на logout.");
         return ResponseEntity.ok("post logout");
     }
 
     @GetMapping("/login")
     public ResponseEntity<?> logout(@RequestHeader("auth-token") String token, @RequestParam String logout) {
-        System.out.println(logout);
+//        System.out.println(logout);
+        String userName = userRepository.findByUsername(jwtUtils.getUsernameFromToken(token.substring(7))).getUsername();
+        logger.info("Пользователь - " + userName + ", выполнил выход.");
         return ResponseEntity.ok("get logout");
     }
 }

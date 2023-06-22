@@ -1,6 +1,8 @@
 package ru.pda.cloudservice.components;
 
 import io.jsonwebtoken.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +12,7 @@ import java.util.Date;
 
 @Component
 public class JwtUtils {
+    Logger logger = LoggerFactory.getLogger(JwtUtils.class);
     @Value("${jwt.sessionTime}")
     private int expirationTime;
     @Value("${jwt.secret}")
@@ -21,15 +24,20 @@ public class JwtUtils {
                     .parseClaimsJws(authToken);
             return true;
         } catch (SignatureException e) {
-            System.out.println("неправильная сигнатура JWT: " + e.getMessage());
+            logger.warn("неправильная сигнатура JWT: " + e.getMessage());
+//            System.out.println("неправильная сигнатура JWT: " + e.getMessage());
         } catch (MalformedJwtException e) {
-            System.out.println("некорректный JWT токен: " + e.getMessage());
+            logger.error("некорректный JWT токен: " + e.getMessage());
+//            System.out.println("некорректный JWT токен: " + e.getMessage());
         } catch (ExpiredJwtException e) {
-            System.out.println("истек период JWT токена: " + e.getMessage());
+            logger.info("истек период JWT токена: " + e.getMessage());
+//            System.out.println("истек период JWT токена: " + e.getMessage());
         } catch (UnsupportedJwtException e) {
-            System.out.println("не поддерживаемый JWT токен: " + e.getMessage());
+            logger.error("не поддерживаемый JWT токен: " + e.getMessage());
+//            System.out.println("не поддерживаемый JWT токен: " + e.getMessage());
         } catch (IllegalArgumentException e) {
-            System.out.println("требования в JWT пусты: " + e.getMessage());
+            logger.warn("требования в JWT пусты: " + e.getMessage());
+//            System.out.println("требования в JWT пусты: " + e.getMessage());
         }
 
         return false;

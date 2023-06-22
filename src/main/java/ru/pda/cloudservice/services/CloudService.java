@@ -1,10 +1,12 @@
 package ru.pda.cloudservice.services;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import ru.pda.cloudservice.components.JwtUtils;
-import ru.pda.cloudservice.entitys.FileList;
+import ru.pda.cloudservice.entitys.UserItemList;
 import ru.pda.cloudservice.entitys.UserFile;
 import ru.pda.cloudservice.repositorys.FileRepository;
 import ru.pda.cloudservice.repositorys.UserRepository;
@@ -13,6 +15,8 @@ import java.util.List;
 
 @Service
 public class CloudService {
+
+    Logger logger = LoggerFactory.getLogger(CloudService.class);
     @Autowired
     private JwtUtils jwtUtils;
     @Autowired
@@ -25,14 +29,17 @@ public class CloudService {
             Long userId = userRepository.findByUsername(jwtUtils.getUsernameFromToken(token)).getId();
             fileRepository.save(new UserFile(userId, fileName, file));
         } catch (Exception e) {
+            logger.error("Ошибка при загрузке файла.", e.getMessage());
             return false;
         }
+        logger.info("Файл " + fileName + " успешно добавлен.");
         return true;
     }
 
     public UserFile downloadFile(String token, String fileName) {
         Long userId = userRepository.findByUsername(jwtUtils.getUsernameFromToken(token)).getId();
 
+        logger.info("Файл " + fileName + " успешно передан.");
         return fileRepository.findByUidAndFileName(userId, fileName);
     }
 
@@ -47,8 +54,10 @@ public class CloudService {
             fileRepository.delete(userFile);
             fileRepository.save(newUserFile);
         } catch (Exception e) {
+            logger.error("Ошибка при переименовании файла.", e.getMessage());
             return false;
         }
+        logger.info("Файл успешно переименован. " + fileName + " -> " + name);
         return true;
     }
 
@@ -59,18 +68,17 @@ public class CloudService {
             if (userFile == null) return false;
             fileRepository.delete(userFile);
         } catch (Exception e) {
+            logger.error("Ошибка при удалении файла.", e.getMessage());
             return false;
         }
-
+        logger.info("Файл " + fileName + " успешно удален.");
         return true;
     }
 
-    public List<Object> getFileList(int limit, String token) {
+    public List<UserItemList> getFileList(int limit, String token) {
         Long userId = userRepository.findByUsername(jwtUtils.getUsernameFromToken(token)).getId();
-        List<UserFile> userFiles = fileRepository.findFileNameByUid(userId, Pageable.ofSize(limit));
-        List<Object> ufList = List.of(userFiles.stream().map(x-> {return new FileList(x.getFileName(), x.getFileSize()); }).toArray());
-
-        return ufList;
-
+        List<UserItemList> userItems = fileRepository.findFileNameAndFileSizeByUid(userId, Pageable.ofSize(limit));
+        logger.info("Список файлов успешно передан.");
+        return userItems;
     }
 }
